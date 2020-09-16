@@ -1,0 +1,39 @@
+/*
+ * Copyright (c) 2015-2016, The Linux Foundation. All rights reserved.
+ *
+ * Copyright (c) 2020, Shubham-Panwar.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 and
+ * only version 2 as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ */
+ 
+&soc {  
+	
+	fp_id: fp_id {
+		status = "ok";
+		compatible = "fp_id,fp_id";
+		interrupt-parent = <&tlmm>;
+		silead,gpio_fp_id = <&tlmm 90 0x0>;
+		silead,gpio_pwr_id = <&tlmm 47 0x0>;
+	};
+	
+	goodix_fp {
+		compatible = "goodix,fingerprint";
+		interrupt-parent = <&tlmm>;
+		interrupts = <48 0x0>;
+		spi-max-frequency = <5000000>;
+		vio-supply   = <&pm8937_l6>;
+	
+		goodix,gpio_reset = <&tlmm 95 0>;//reset gpio
+		goodix,gpio_irq    = <&tlmm 48 0>;//irq gpio
+		goodix,gpio_pwr  = <&tlmm 47 0>;//power gpio
+		goodix,gpio_id   = <&tlmm 90 0>;//compatible gpio		
+		status = "ok";
+	};
+};

@@ -1,0 +1,67 @@
+/*
+ * Copyright (c) 2015-2016, The Linux Foundation. All rights reserved.
+ *
+ * Copyright (c) 2020, Shubham-Panwar.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 and
+ * only version 2 as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ */
+
+&pmi_haptic {
+	status = "okay";
+	qcom,actuator-type = "erm";
+	qcom,min-timeout-ms = <150>;
+	qcom,vmax-mv = <3200>;
+	/delete-property/ qcom,en-brake;
+	/delete-property/ qcom,lra-auto-res-mode;
+	/delete-property/ qcom,lra-high-z;
+	/delete-property/ qcom,lra-res-cal-period;
+	/delete-property/ qcom,correct-lra-drive-freq;
+	/delete-property/ qcom,misc-trim-error-rc19p2-clk-reg-present;
+};
+
+&i2c_2 {
+	pericom-type-c@1d {
+		status="disabled";
+	};
+};
+
+&usb_otg {
+	qcom,hsusb-otg-phy-init-seq =
+		<0x39 0x81 0x37 0x82 0xffffffff>;
+};
+
+&sdc2_cmd_on {
+	config {
+		drive-strength = <12>;
+	};
+};
+
+&sdc2_data_on {
+	config {
+		drive-strength = <12>;
+	};
+};
+
+&soc {
+
+	qcom,msm-imem@8600000 {
+
+		dload_type@18 {
+
+			compatible = "qcom,msm-imem-dload-type";
+			reg = <0x18 4>;
+		};
+
+		/delete-node/ dload_type@1c;
+	};
+	/delete-node/ memory@0x200000;
+	/delete-node/ rpm-memory@0x60000;
+	/delete-node/ qcom,system-stats@60140;
+};
