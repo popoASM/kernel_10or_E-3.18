@@ -26,7 +26,7 @@ int gf_parse_dts(struct gf_dev *gf_dev)
 	struct device *dev = &gf_dev->spi->dev;
 	struct device_node *np = dev->of_node;
 
-	gf_dev->reset_gpio = of_get_named_gpio(np, "fp-gpio-reset", 0);
+	gf_dev->reset_gpio = of_get_named_gpio(np, "goodix,gpio_reset", 0);
 	if (gf_dev->reset_gpio < 0) {
 		pr_err("falied to get reset gpio!\n");
 		return gf_dev->reset_gpio;
@@ -39,7 +39,7 @@ int gf_parse_dts(struct gf_dev *gf_dev)
 	}
 	gpio_direction_output(gf_dev->reset_gpio, 1);
 
-	gf_dev->irq_gpio = of_get_named_gpio(np, "fp-gpio-irq", 0);
+	gf_dev->irq_gpio = of_get_named_gpio(np, "goodix,gpio_irq", 0);
 	if (gf_dev->irq_gpio < 0) {
 		pr_err("falied to get irq gpio!\n");
 		return gf_dev->irq_gpio;
@@ -75,8 +75,8 @@ void gf_cleanup(struct gf_dev *gf_dev)
 int gf_power_on(struct gf_dev *gf_dev)
 {
 	int rc = 0;
-
-	/* TODO: add your power control here */
+	msleep(10);
+	pr_info("---- power on ok ----\n");
 	return rc;
 }
 
@@ -84,7 +84,7 @@ int gf_power_off(struct gf_dev *gf_dev)
 {
 	int rc = 0;
 
-	/* TODO: add your power control here */
+	pr_info("---- power off ----\n");
 
 	return rc;
 }

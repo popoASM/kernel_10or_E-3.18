@@ -59,7 +59,7 @@
 #define GF_SPIDEV_NAME     "goodix,fingerprint"
 /*device name after register in charater*/
 #define GF_DEV_NAME            "goodix_fp"
-#define	GF_INPUT_NAME	    "goodix_fp"	/*"goodix_fp" */
+#define	GF_INPUT_NAME	    "gf3258"	/*"goodix_fp" */
 
 #define	CHRD_DRIVER_NAME	"goodix_fp_spi"
 #define	CLASS_NAME		    "goodix_fp"
@@ -410,6 +410,15 @@ static long gf_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 	if (retval)
 		return -EFAULT;
 
+	if (gf_dev->device_available == 0) {
+		if ((cmd == GF_IOC_ENABLE_POWER) || (cmd == GF_IOC_DISABLE_POWER)) {
+			pr_info("power cmd\n");
+		} else {
+			pr_info("Sensor is power off currently. \n");
+			return -ENODEV;
+		}
+	}
+
 	switch (cmd) {
 	case GF_IOC_INIT:
 		pr_debug("%s GF_IOC_INIT\n", __func__);
@@ -482,12 +491,20 @@ static long gf_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 
 	case GF_IOC_ENABLE_POWER:
 		pr_debug("%s GF_IOC_ENABLE_POWER\n", __func__);
-		gf_power_on(gf_dev);
+		if (gf_dev->device_available == 1)
+			pr_info("Sensor has already powered-on.\n");
+		else
+			gf_power_on(gf_dev);
+		gf_dev->device_available = 1;
 		break;
 
 	case GF_IOC_DISABLE_POWER:
 		pr_debug("%s GF_IOC_DISABLE_POWER\n", __func__);
-		gf_power_off(gf_dev);
+		if (gf_dev->device_available == 0)
+			pr_info("Sensor has already powered-off.\n");
+		else
+			gf_power_off(gf_dev);
+		gf_dev->device_available = 0;
 		break;
 
 	case GF_IOC_ENTER_SLEEP_MODE:
@@ -602,6 +619,8 @@ static int gf_release(struct inode *inode, struct file *filp)
 		irq_cleanup(gf_dev);
 		gf_cleanup(gf_dev);
 
+		pr_info("disble_irq. irq = %d\n", gf_dev->irq);
+		gf_disable_irq(gf_dev);
 		/*power off the sensor*/
 		gf_dev->device_available = 0;
 		gf_power_off(gf_dev);
@@ -638,6 +657,8 @@ static int goodix_fb_state_chg_callback(struct notifier_block *nb,
 	if (val != FB_EVENT_BLANK)
 		return 0;
 
+	pr_info("[info] %s go to the goodix_fb_state_chg_callback value = %d\n",
+			__func__, (int)val);
 	gf_dev = container_of(nb, struct gf_dev, notifier);
 	if (evdata && evdata->data && val == FB_EVENT_BLANK && gf_dev) {
 		blank = *(int *)(evdata->data);
@@ -787,6 +808,7 @@ error_dev:
 		mutex_unlock(&device_list_lock);
 	}
 error_hw:
+	gf_cleanup(gf_dev);
 	gf_dev->device_available = 0;
 
 	return status;
@@ -835,9 +857,40 @@ static struct platform_driver gf_driver = {
 	.remove = gf_remove,
 };
 
+static struct of_device_id fp_id_match_table[] = {
+	{ .compatible = "fp_id,fp_id",},
+	{},
+};
+MODULE_DEVICE_TABLE(of, fp_id_match_table);
 static int __init gf_init(void)
 {
 	int status;
+	struct device_node *fp_id_np = NULL;
+	int fp_id_gpio = 0, fp_id_gpio_value = 0, fp_id_pwr = 0;
+	
+	fp_id_np = of_find_matching_node(fp_id_np, fp_id_match_table);
+	if (fp_id_np) {
+		fp_id_gpio = of_get_named_gpio(fp_id_np, "silead,gpio_fp_id", 0);
+             fp_id_pwr = of_get_named_gpio(fp_id_np, "silead,gpio_pwr_id", 0);
+		printk("%s: fp_id_gpio=%d\n",__func__, fp_id_gpio);
+	}
+
+	if (fp_id_gpio < 0 || fp_id_pwr < 0) {
+		printk("of_get_gpio   fail\n");
+		return status;
+	} 
+    	gpio_direction_output(fp_id_pwr,1);
+	mdelay(5);
+	gpio_direction_input(fp_id_gpio);
+	fp_id_gpio_value = gpio_get_value(fp_id_gpio);
+	printk("%s: fp_id_gpio_value=%d\n",__func__, fp_id_gpio_value);
+	if(fp_id_gpio_value == 1){
+		printk("%s:  need to load goodix driver \n",__func__);
+	}
+	else{
+
+		return status;
+	}
 
 	/* Claim our 256 reserved device numbers.  Then register a class
 	 * that will key udev/mdev to add/remove /dev nodes.  Last, register
